@@ -18,11 +18,11 @@ module WashOut
       @map        = {}
       @multiplied = multiplied
 
-      if soap_config.camelize_wsdl.to_s == 'lower'
-        @name = @name.camelize(:lower)
-      elsif soap_config.camelize_wsdl
-        @name = @name.camelize
-      end
+      # if soap_config.camelize_wsdl.to_s == 'lower'
+      #   @name = @name.camelize(:lower)
+      # elsif soap_config.camelize_wsdl
+      #   @name = @name.camelize
+      # end
 
       if type.is_a?(Symbol)
         @type = type.to_s
