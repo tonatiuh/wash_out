@@ -185,7 +185,7 @@ module WashOut
     private
 
     def action_spec
-      self.class.soap_actions[soap_action]
+      WashOut::ActionFinder.find_in_controller(self.class, soap_action)
     end
 
     def soap_action
