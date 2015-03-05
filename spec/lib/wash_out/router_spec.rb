@@ -21,18 +21,18 @@ describe WashOut::Router do
     end
   end
 
-  context 'when action name has "Request" suffix' do
+  context 'when soap action inferred from request ' do
     before do
       mock_controller do
         soap_action 'rumba'
 
         def rumba
-          render text: 'foobar'
+          render text: 'response-body'
         end
       end
     end
 
-    context 'if matching action exists' do
+    context 'matches with a controller action' do
       let(:action) { 'rumba' }
 
       it 'executes matching action' do
@@ -44,24 +44,29 @@ describe WashOut::Router do
         }
 
         response = WashOut::Router.new('Api').call(env)[2]
-        expect(response.body).to eq('foobar')
+        expect(response.body).to eq('response-body')
       end
     end
 
-    context 'if no matching action exists' do
-      context 'but matching action without "Request" suffix exists' do
-        let(:action) { 'rumbaRequest' }
+    context 'doesn\'t match any controller action' do
+      describe 'interpretation of message tag as soap action' do
+        context 'if message tag ends with Request suffix' do
+          let(:action) { 'non-existent-action' }
+          let(:message_tag) { 'rumbaRequest' }
 
-        it 'executes matching action without "Request" suffix' do
-          env = {
-            'REQUEST_METHOD' => 'POST',
-            'rack.input' => double('basic-rack-input', {:string => ''}),
-            'wash_out.soap_action' => action,
-            'wash_out.soap_data' => {:Envelope => {:Body => {action.to_sym => {}}}}
-          }
+          context 'ignoring Request suffix' do
+            it 'attempts to link message tag with controller actions' do
+              env = {
+                'REQUEST_METHOD' => 'POST',
+                'rack.input' => double('basic-rack-input', {:string => ''}),
+                'wash_out.soap_action' => action,
+                'wash_out.soap_data' => {:Envelope => {:Body => {message_tag.to_sym => {a: :b}}}}
+              }
 
-          response = WashOut::Router.new('Api').call(env)[2]
-          expect(response.body).to eq('foobar')
+              response = WashOut::Router.new('Api').call(env)[2]
+              expect(response.body).to eq('response-body')
+            end
+          end
         end
       end
     end

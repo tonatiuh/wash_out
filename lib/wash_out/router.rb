@@ -22,10 +22,7 @@ module WashOut
         parsed_soap_body = nori(controller.soap_config.snakecase_input).parse(soap_body env)
         return nil if parsed_soap_body.blank?
 
-        soap_action = parsed_soap_body
-            .values_at(:envelope, :Envelope).compact.first
-            .values_at(:body, :Body).compact.first
-            .keys.first.to_s
+        soap_action = WashOut::RequestHelper.message_tag_from_soap_body(parsed_soap_body)
       end
 
       # RUBY18 1.8 does not have force_encoding.
@@ -81,8 +78,7 @@ module WashOut
 
       soap_parameters = parse_soap_parameters(env)
 
-      action_spec = WashOut::ActionFinder.find_in_controller(controller,
-                                                             soap_action)
+      action_spec = find_action_spec(soap_action, env)
 
       if action_spec
         action = action_spec[:to]
@@ -91,6 +87,14 @@ module WashOut
       end
 
       controller.action(action).call(env)
+    end
+
+    private
+
+    def find_action_spec(soap_action, env)
+      controller.soap_actions[soap_action] ||
+        WashOut::RequestHelper.find_action_based_on_message_tag(env['wash_out.soap_data'],
+                                                               controller)
     end
   end
 end
